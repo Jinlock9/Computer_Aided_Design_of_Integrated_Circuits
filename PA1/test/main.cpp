@@ -24,7 +24,7 @@ int main(int argc, char* argv[]) {
                 getGate(line);
             }
             else {
-                std::cout << line << std::endl;
+                getGate2(line);
             }
         }
     }
@@ -41,13 +41,32 @@ auto remove_space(std::string str) -> std::string {
             filtered.push_back(str[i]);
         }
     }
-
     return filtered;
 }
 
 void getGate(std::string str) {
     std::size_t r = str.find("(");
     std::size_t l = str.rfind(")");
-    std::string raw = str.substr(r + 1, l - r -1);
+    std::string raw = str.substr(r + 1, l - r - 1);
     std::cout << raw << std::endl;
+}
+
+void getGate2(std::string str) {
+    std::size_t eq = str.find("=");
+    std::size_t rb = str.find("(");
+    std::size_t lb = str.find(")");
+    std::string out = str.substr(0, eq);
+    std::string logic = str.substr(eq + 1, rb - eq - 1);
+    std::cout << out << " | " << logic << " | ";
+    std::string in;
+    for (std::size_t i = rb + 1; i < lb; i++) {
+        if (str[i] == ',') {
+            std::cout << in << " | ";
+            in = "";
+        }
+        else {
+            in.push_back(str[i]);
+        }
+    }
+    std::cout << in << std::endl;
 }
