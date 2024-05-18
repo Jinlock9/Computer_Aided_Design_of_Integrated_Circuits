@@ -6,35 +6,50 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <vector>
+#include <unordered_map>
+
+std::vector<Gate> gates;
+std::unordered_map<std::string, std::size_t> inputs;
 
 int main(int argc, char* argv[]) {
     std::string bench = argv[1];
     std::string value = argv[2];
     std::ifstream netlist (bench);
 
-    std::string raw;
+    std::vector<std::string> outputs;
 
+    std::string raw;
     while (getline(netlist, raw)) {
         if (!raw.empty() && !raw.find_first_not_of("#")) {
             std::string line = remove_space(raw);
             if (line.find("INPUT") == 0 || line.find("input") == 0) {
-                getGate(line);
+                inputs[get_signal(line)] = 0;
             }
             else if (line.find("OUTPUT") == 0 || line.find("output") == 0) {
-                getGate(line);
+                outputs.push_back(get_signal(line));
             }
             else {
-                getGate2(line);
-            }
+                getGate(line);
+            } 
         }
     }
 
     netlist.close();
 
+    for (auto input : inputs) {
+        std::cout << input.first << " " << input.second << std::endl;
+    }
+
+    if (!outputs.empty()) {
+        for (std::string output : outputs) {
+            std::cout << output << std::endl;
+        }
+    }
+
     return 0;
 }
 
-auto remove_space(std::string str) -> std::string {
+std::string remove_space(std::string str) {
     std::string filtered = "";
     for (std::size_t i = 0; i < str.length(); i++) {
         if(str[i] != ' ') {
@@ -44,14 +59,14 @@ auto remove_space(std::string str) -> std::string {
     return filtered;
 }
 
-void getGate(std::string str) {
+std::string get_signal(std::string str) {
     std::size_t r = str.find("(");
     std::size_t l = str.rfind(")");
-    std::string raw = str.substr(r + 1, l - r - 1);
-    std::cout << raw << std::endl;
+    std::string signal = str.substr(r + 1, l - r - 1);
+    return signal;
 }
 
-void getGate2(std::string str) {
+void getGate(std::string str) {
     std::size_t eq = str.find("=");
     std::size_t rb = str.find("(");
     std::size_t lb = str.find(")");
