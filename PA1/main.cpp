@@ -6,15 +6,12 @@
 #include <stdlib.h>
 #include <vector>
 #include <unordered_map>
-#include <chrono>
 
 std::vector<Gate> gates;
 std::unordered_map<std::string, bool> inputs;
 std::vector<std::string> outputs;
 
 int main(int argc, char* argv[]) {
-    std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
-
     std::string bench = argv[1];
     std::string val = argv[2];
 
@@ -23,9 +20,6 @@ int main(int argc, char* argv[]) {
 
     run_circuit();
     print();
-
-    std::chrono::duration<double>sec = std::chrono::system_clock::now() - start;
-    std::cout << "Time : " << sec.count() <<"seconds"<< std::endl;
 
     return 0;
 }
@@ -95,7 +89,9 @@ Type get_type(std::string type) {
     else if (type == "BUF" || type == "buf") {
         return BUF;
     }
-    return ERROR;
+    else {
+        return ERROR;
+    }
 }
 
 bool get_output(Type type, std::vector<std::string> input) {
@@ -157,16 +153,15 @@ bool get_output(Type type, std::vector<std::string> input) {
 void read_bench(std::string str) {
     std::ifstream bench (str);
     std::string raw;
+    int checker = 0;
     while (getline(bench, raw)) {
         if (!raw.empty() && !raw.find_first_not_of("#")) {
             std::string line = remove_space(raw);
-            if (line.find("INPUT") == 0 || line.find("input") == 0) {
-                inputs[get_signal(line)] = 0;
-            }
-            else if (line.find("OUTPUT") == 0 || line.find("output") == 0) {
+            if (line.find("OUTPUT") == 0 || line.find("output") == 0) {
                 outputs.push_back(get_signal(line));
+                checker = 1;
             }
-            else {
+            else if (checker) { // Skipping INPUT
                 get_gate(line);
             } 
         }
