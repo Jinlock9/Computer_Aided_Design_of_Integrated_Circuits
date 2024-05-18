@@ -2,49 +2,30 @@
 #include <iostream>
 #include <fstream>
 #include <string>
-#include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <vector>
 #include <unordered_map>
+#include <chrono>
 
 std::vector<Gate> gates;
-std::unordered_map<std::string, std::size_t> inputs;
+std::unordered_map<std::string, bool> inputs;
+std::vector<std::string> outputs;
 
 int main(int argc, char* argv[]) {
+    std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
+
     std::string bench = argv[1];
-    std::string value = argv[2];
-    std::ifstream netlist (bench);
+    std::string val = argv[2];
 
-    std::vector<std::string> outputs;
+    read_bench(bench);
+    read_values(val);
 
-    std::string raw;
-    while (getline(netlist, raw)) {
-        if (!raw.empty() && !raw.find_first_not_of("#")) {
-            std::string line = remove_space(raw);
-            if (line.find("INPUT") == 0 || line.find("input") == 0) {
-                inputs[get_signal(line)] = 0;
-            }
-            else if (line.find("OUTPUT") == 0 || line.find("output") == 0) {
-                outputs.push_back(get_signal(line));
-            }
-            else {
-                getGate(line);
-            } 
-        }
-    }
+    run_circuit();
+    print();
 
-    netlist.close();
-
-    for (auto input : inputs) {
-        std::cout << input.first << " " << input.second << std::endl;
-    }
-
-    if (!outputs.empty()) {
-        for (std::string output : outputs) {
-            std::cout << output << std::endl;
-        }
-    }
+    std::chrono::duration<double>sec = std::chrono::system_clock::now() - start;
+    std::cout << "Time : " << sec.count() <<"seconds"<< std::endl;
 
     return 0;
 }
@@ -66,22 +47,163 @@ std::string get_signal(std::string str) {
     return signal;
 }
 
-void getGate(std::string str) {
+void get_gate(std::string str) {
+    Gate gate;
     std::size_t eq = str.find("=");
     std::size_t rb = str.find("(");
     std::size_t lb = str.find(")");
-    std::string out = str.substr(0, eq);
-    std::string logic = str.substr(eq + 1, rb - eq - 1);
-    std::cout << out << " | " << logic << " | ";
+
+    gate.output = str.substr(0, eq);
+    gate.type = get_type(str.substr(eq + 1, rb - eq - 1));
+    
     std::string in;
     for (std::size_t i = rb + 1; i < lb; i++) {
         if (str[i] == ',') {
-            std::cout << in << " | ";
+            gate.input.push_back(in);
             in = "";
         }
         else {
             in.push_back(str[i]);
         }
     }
-    std::cout << in << std::endl;
+    gate.input.push_back(in);
+    gates.push_back(gate);
+}
+
+Type get_type(std::string type) {
+    if (type == "AND" || type == "and") {
+        return AND;
+    }
+    else if (type == "OR" || type == "or") {
+        return OR;
+    }
+    else if (type == "NAND" || type == "nand") {
+        return NAND;
+    }
+    else if (type == "NOR" || type == "nor") {
+        return NOR;
+    }
+    else if (type == "XOR" || type == "xor") {
+        return XOR;
+    }
+    else if (type == "XNOR" || type == "xnor") {
+        return XNOR;
+    }
+    else if (type == "NOT" || type == "not") {
+        return INV;
+    }
+    else if (type == "BUF" || type == "buf") {
+        return BUF;
+    }
+    return ERROR;
+}
+
+bool get_output(Type type, std::vector<std::string> input) {
+    bool output = false; // default
+    if (type == AND) {
+        output = true;
+        for (std::string in : input) {
+           if (!inputs[in]) {
+                output = false;
+           }
+        }
+    }
+    else if (type == OR) {
+        output = false;
+        for (std::string in : input) {
+           if (inputs[in]) {
+                output = true;
+           }
+        }
+    }
+    else if (type == NAND) {
+        output = true;
+        for (std::string in : input) {
+           if (!inputs[in]) {
+                output = false;
+           }
+        }
+        output = !output;
+    }
+    else if (type == NOR) {
+        output = false;
+        for (std::string in : input) {
+           if (inputs[in]) {
+                output = true;
+           }
+        }
+        output = !output;
+    }
+    else if (type == XOR) {
+        for (std::string in : input) {
+            output ^= inputs[in];
+        }
+    }
+    else if (type == XNOR) {
+        for (std::string in : input) {
+            output ^= inputs[in];
+        }
+        output = !output;
+    }
+    else if (type == INV) {
+        output = !inputs[input[0]];
+    }
+    else if (type == BUF) {
+        output = inputs[input[0]];
+    }
+    return output;
+}
+
+void read_bench(std::string str) {
+    std::ifstream bench (str);
+    std::string raw;
+    while (getline(bench, raw)) {
+        if (!raw.empty() && !raw.find_first_not_of("#")) {
+            std::string line = remove_space(raw);
+            if (line.find("INPUT") == 0 || line.find("input") == 0) {
+                inputs[get_signal(line)] = 0;
+            }
+            else if (line.find("OUTPUT") == 0 || line.find("output") == 0) {
+                outputs.push_back(get_signal(line));
+            }
+            else {
+                get_gate(line);
+            } 
+        }
+    }
+    bench.close();
+}
+
+void read_values(std::string str) {
+    std::ifstream val (str);
+    std::string raw;
+    while (getline(val, raw)) {
+        if (!raw.empty()) {
+            std::size_t space = raw.find(" ");
+            inputs[raw.substr(0, space)] = std::stoi(raw.substr(space + 1));
+        }
+    }
+    val.close();
+}
+
+void run_circuit() {
+    if (!gates.empty()) {
+        for (auto gate : gates) {
+            inputs[gate.output] = get_output(gate.type, gate.input);
+        }
+    }
+}
+
+void print() {
+    if (!outputs.empty()) {
+        for (std::string output : outputs) {
+            std::cout << output << " ";
+            if (inputs[output]) {
+                std::cout << 1 << std::endl;
+            }
+            else {
+                std::cout << 0 << std::endl;
+            }
+        }
+    }
 }
