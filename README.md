@@ -1,8 +1,8 @@
 # Computer Aided Design of Integrated Circuits
 Course works of 2024SU **ECE6703J: Computer Aided Design of Integrated Circuits** course at University of Michigan - Shanghai Jiaotong University Joint Institute.
 
-1. PA1: Reading Combinational Circuit and Evaluating Its Outputs
-2. PA2: ~
+1. **PA1: Reading Combinational Circuit and Evaluating Its Outputs**
+2. **PA2: ~**
 
 **HONOR CODE**  
 > In the event that similar course content is assigned going forward, it is the duty of JI students to avoid copying or adjusting these codes, or MD/PDF documents, in adherence to the Honor Code. The repository owner disclaims any liability for the actions of others.
