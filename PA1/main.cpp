@@ -101,6 +101,7 @@ bool get_output(Type type, std::vector<std::string> input) {
         for (std::string in : input) {
            if (!inputs[in]) {
                 output = false;
+                break;
            }
         }
     }
@@ -109,6 +110,7 @@ bool get_output(Type type, std::vector<std::string> input) {
         for (std::string in : input) {
            if (inputs[in]) {
                 output = true;
+                break;
            }
         }
     }
@@ -117,6 +119,7 @@ bool get_output(Type type, std::vector<std::string> input) {
         for (std::string in : input) {
            if (!inputs[in]) {
                 output = false;
+                break;
            }
         }
         output = !output;
@@ -126,6 +129,7 @@ bool get_output(Type type, std::vector<std::string> input) {
         for (std::string in : input) {
            if (inputs[in]) {
                 output = true;
+                break;
            }
         }
         output = !output;
