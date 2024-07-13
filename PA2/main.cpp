@@ -1,19 +1,20 @@
 #include "main.hpp"
 
 int num_vars;
-cubeList cube_list;
 
 int main(int argc, char* argv[]) {
-    init(argv[1]);
-    execute();
+    cubeList cube_list = init(argv[1]);
+    cube_list = complement(cube_list);
+    print(cube_list);
 
     return 0;
 }
 
-void init(std::string str) {
+cubeList init(std::string str) {
+    cubeList list;
+    list.num_cubes = 0;
     std::ifstream file (str);
     std::string line;
-
     if (getline(file, line) && !line.empty()) {
         num_vars = std::stoi(line);
     }
@@ -24,38 +25,35 @@ void init(std::string str) {
             if (ch == '1') edge = 1;
             else if (ch == '0') edge = 2;
             else if (ch == '-') edge = 3;
-            else edge = 0;
             cube.push_back(edge);
         }
-        cube_list.cubes.push_back(cube);
-        cube_list.num_cubes++;
+        list.cubes.push_back(cube);
+        list.num_cubes++;
     }
     file.close();
+    return list;
 }
 
 cubeList complement(cubeList list) {
-    // Termination Conditions
     if (list.num_cubes == 0) { 
-        // [1] Empty cube list
-        list.num_cubes++;
+        cubeList one;
+        one.num_cubes = 1;
         std::vector<unsigned int> temp;
         for (int i = 0; i < num_vars; i++) {
             temp.push_back(3);
         }
-        list.cubes.push_back(temp);
-        return list;
+        one.cubes.push_back(temp);
+        return one;
     }
-    // [3] Cube list contains All-Don't-Cares Cube
     for (auto cube : list.cubes) {
         if (is_all_dont_cares(cube)) {
-            cubeList new_list;
-            new_list.num_cubes = 0;
-            return new_list;
+            cubeList zero;
+            zero.num_cubes = 0;
+            return zero;
         }
     }
     if (list.num_cubes == 1) {
         return demorgan(list.cubes[0]);
-        // [2] Cube list contains just one cube
     }
 
     int x = selection(list);
@@ -70,14 +68,14 @@ cubeList complement(cubeList list) {
 }
 
 int is_all_dont_cares(std::vector<unsigned int> cube) {
-    int value = 1;
+    int yes = 1;
     for (auto edge : cube) {
         if (edge != 3) {
-            value = 0;
+            yes = 0;
             break;
         }
     }
-    return value;
+    return yes;
 }
 
 cubeList demorgan(std::vector<unsigned int> cube) {
@@ -108,9 +106,9 @@ int selection(cubeList list) {
     int index;
     int max_num = -1;
     int min_balance = num_vars + 1;
-    int no_binate = 1;
-    std::unordered_map<int, int> map1;
-    std::unordered_map<int, int> map2;
+    int unate = 1;
+    std::vector<int> map1(num_vars, 0);
+    std::vector<int> map2(num_vars, 0);
     for (auto cube : list.cubes) {
         for (int i = 0; i < num_vars; i++) {
             if (cube[i] != 3) {
@@ -125,22 +123,24 @@ int selection(cubeList list) {
         }
     }
     for (int j = 0; j < num_vars; j++) {
-        if (std::abs(map1[j]) != std::abs(map2[j])) {
+        if (std::abs(map1[j]) != std::abs(map2[j])) { // binate
+            int abs_map2j = std::abs(map2[j]);
             if (map1[j] > max_num) {
                 index = j;
                 max_num = map1[j];
-                min_balance = map2[j];
+                min_balance = abs_map2j;
             }
             else if (map1[j] == max_num) {
-                if (map2[j] < min_balance) {
+                if (abs_map2j < min_balance) {
                     index = j;
-                    min_balance = map2[j];
+                    min_balance = abs_map2j;
                 }
             }
-            no_binate = 0;
+            unate = 0;
         }
     }
-    if (no_binate) {
+    if (unate) {
+        max_num = -1;
         for (int k = 0; k < num_vars; k++) {
             if (map1[k] > max_num) {
                 index = k;
@@ -160,7 +160,7 @@ cubeList cofactor(cubeList list, int index, int sign) {
                 std::vector<unsigned int> temp;
                 for (int i = 0; i < num_vars; i ++) {
                     if (i == index) {
-                        temp.push_back(0b11);
+                        temp.push_back(3);
                     }
                     else {
                         temp.push_back(cube[i]);
@@ -177,7 +177,7 @@ cubeList cofactor(cubeList list, int index, int sign) {
                 std::vector<unsigned int> temp;
                 for (int i = 0; i < num_vars; i ++) {
                     if (i == index) {
-                        temp.push_back(0b11);
+                        temp.push_back(3);
                     }
                     else {
                         temp.push_back(cube[i]);
@@ -241,12 +241,10 @@ cubeList op_or(cubeList list1, cubeList list2) {
     return new_list;
 }
 
-void execute() {
-    cube_list = complement(cube_list);
-
+void print(cubeList list) {
     std::cout << num_vars << std::endl;
-    if (cube_list.num_cubes > 0) {
-        for (auto cube : cube_list.cubes) {
+    if (list.num_cubes > 0) {
+        for (auto cube : list.cubes) {
             for (auto edge : cube) {
                 switch (edge) {
                     case 1:
@@ -259,10 +257,13 @@ void execute() {
                         std::cout << "-";
                         break;
                     default:
-                        std::cout << "E";
+                        std::cout << "";
                 }
             }
             std::cout << std::endl;
         }
+    }
+    else {
+        std::cout << std::endl;
     }
 }
